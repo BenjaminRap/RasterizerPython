@@ -53,11 +53,17 @@ def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
     bounding_box = get_bounding_box(projected_triangle, screen_size)
     for y in range(bounding_box.bottom, bounding_box.top):
         for x in range(bounding_box.left, bounding_box.right):
-            if is_in_triangle(projected_triangle, (x, y)):
+            if is_in_triangle(projected_triangle, x, y):
                 screen.set_at((x, y), (255, 255, 255))
 
-def is_in_triangle(triangle : list[NDArray[np.float32]], x_y : Tuple[int, int]) -> bool:
-    return True
+def is_in_triangle(triangle : list[NDArray[np.float32]], x : int, y : int) -> bool:
+    return edge(triangle[0], triangle[1], x, y) > 0 \
+        and edge(triangle[1], triangle[2], x, y) > 0 \
+        and edge(triangle[2], triangle[0], x, y) > 0
+
+def edge(vector_a : NDArray[np.float32], vector_b : NDArray[np.float32], point_x : int, point_y : int):
+    return (vector_a[0] - vector_b[0]) * (point_y - vector_a[1]) \
+            - (vector_a[1] - vector_b[1]) * (point_x - vector_a[0])
 
 def get_bounding_box(projected_vertices : list[NDArray[np.float32]], screen_size : Tuple[int, int]) -> BoundingBox:
     left = max(floor(min(vertex[0] for vertex in projected_vertices)), 0)
