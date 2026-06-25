@@ -22,6 +22,7 @@ def run_rasterizer(objectFilePath : str):
             if event.type == pygame.QUIT:
                 running = False
         transform.rotation[1] = sin(pygame.time.get_ticks() / 1000)
+        transform.position[0] = sin(pygame.time.get_ticks() / 1000) / 7
         screen.fill("black")
         rasterize(game_object, screen)
         pygame.display.flip()
