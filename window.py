@@ -1,26 +1,29 @@
-from math import inf
+from math import sin
 
 import pygame
 import numpy as np
 
 from parseSimpleObjFile import Object3D, parse_simple_obj_file
-from rasterizer import rasterize
+from rasterizer import GameObject, Transform, rasterize
 
 size = (400, 400)
 
 def run_rasterizer(objectFilePath : str):
     pygame.init()
     screen = pygame.display.set_mode(size)
-    depth_buffer = np.full(size, inf, np.float32)
-    running = True
 
+    object_3d : Object3D = parse_simple_obj_file(objectFilePath)
+    transform = Transform(np.array([0, 0, 1], np.float32), np.array([0.5, 0.5, 0.5], np.float32), np.array([0, 0, 0], np.float32))
+    game_object = GameObject(object_3d, transform)
+
+    running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+        transform.rotation[1] = sin(pygame.time.get_ticks() / 1000)
         screen.fill("black")
-        object3D : Object3D = parse_simple_obj_file(objectFilePath)
-        rasterize(object3D, screen, depth_buffer)
+        rasterize(game_object, screen)
         pygame.display.flip()
     pygame.quit()
 

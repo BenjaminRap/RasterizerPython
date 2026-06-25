@@ -33,12 +33,12 @@ class   BoundingBox:
     top: int
     bottom: int
 
-def rasterize(game_object : GameObject, screen : Surface, depth_buffer : NDArray[np.float32]):
+def rasterize(game_object : GameObject, screen : Surface):
     for face in game_object.object_3d.faces:
-        rasterize_face(face, game_object, screen, depth_buffer)
+        rasterize_face(face, game_object, screen)
 
 def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
-                   screen : Surface, depth_buffer : NDArray[np.float32]):
+                   screen : Surface):
     screen_size = screen.get_size()
     projected_triangle : list[NDArray[np.float32]] = []
     for vertex_index in face:
