@@ -40,6 +40,19 @@ def rasterize(game_object : GameObject, screen : Surface):
 def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
                    screen : Surface):
     screen_size = screen.get_size()
+    projected_triangle = get_projected_triangle(game_object, face, screen_size)
+    if projected_triangle == None:
+        return
+    bounding_box = get_bounding_box(projected_triangle, screen_size)
+    draw_triangle(bounding_box, projected_triangle, screen)
+
+def draw_triangle(bounding_box : BoundingBox, projected_triangle : list[NDArray[np.float32]], screen : Surface):
+    for y in range(bounding_box.bottom, bounding_box.top):
+        for x in range(bounding_box.left, bounding_box.right):
+            if is_in_triangle(projected_triangle, x, y):
+                screen.set_at((x, y), (255, 255, 255))
+
+def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], screen_size : Tuple[int, int]) -> list[NDArray[np.float32]] | None:
     projected_triangle : list[NDArray[np.float32]] = []
     for vertex_index in face:
         vertex = game_object.object_3d.vertices[vertex_index]
@@ -50,11 +63,7 @@ def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
             return
         projected_vertex = get_projected_vertex(world_vertex, screen_size)
         projected_triangle.append(projected_vertex)
-    bounding_box = get_bounding_box(projected_triangle, screen_size)
-    for y in range(bounding_box.bottom, bounding_box.top):
-        for x in range(bounding_box.left, bounding_box.right):
-            if is_in_triangle(projected_triangle, x, y):
-                screen.set_at((x, y), (255, 255, 255))
+    return projected_triangle
 
 def is_in_triangle(triangle : list[NDArray[np.float32]], x : int, y : int) -> bool:
     return edge(triangle[0], triangle[1], x, y) > 0 \
