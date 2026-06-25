@@ -1,21 +1,23 @@
 from dataclasses import dataclass, field
+import numpy as np
+from numpy.typing import NDArray
 
 @dataclass
 class   Object3D:
-    vertices : list[list[float]] = field(default_factory=list)
-    faces : list[list[int]] = field(default_factory=list)
+    vertices : list[NDArray[np.float32]] = field(default_factory=list)
+    faces : list[NDArray[np.int32]] = field(default_factory=list)
 
-def parseVertexLine(splittedLine : list[str]) -> list[float]:
+def parseVertexLine(splittedLine : list[str]) -> NDArray[np.float32]:
     if len(splittedLine) != 3:
         raise ValueError("Invalid line format, the vertex should contains 3 floats !")
-    vertex = [float(component) for component in splittedLine]
+    vertex = np.array([float(component) for component in splittedLine], np.float32)
     return vertex
 
-def parseFaceLine(splittedLine : list[str]) -> list[int]:
+def parseFaceLine(splittedLine : list[str]) -> NDArray[np.int32]:
     if len(splittedLine) != 3:
         raise ValueError("Invalid line format : the face should contains 3 integers !")
-    face = [int(vertexIndex) for vertexIndex in splittedLine]
-    if any(vertexIndex <= 0 for vertexIndex in face):
+    face = np.array([int(vertexIndex) - 1 for vertexIndex in splittedLine], np.int32)
+    if any(vertexIndex < 0 for vertexIndex in face):
         raise ValueError("Invalid vertex index in face, it should be superior to 0 !")
     return face
 
@@ -43,7 +45,7 @@ def parseSimpleObjFile(filePath : str) -> Object3D:
                 raise ValueError(f"Invalid file format at line {lineIndex} : {line}") from e
     vertexIndices = (vertexIndex for face in object3D.faces for vertexIndex in face)
     verticesCount = len(object3D.vertices)
-    if any(vertexIndex > verticesCount for vertexIndex in vertexIndices):
+    if any(vertexIndex >= verticesCount for vertexIndex in vertexIndices):
         raise ValueError(f"Invalid vertex index in face ! It should be smaller or equal to the number of vertices !")
     return object3D
 
