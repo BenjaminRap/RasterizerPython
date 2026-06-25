@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from math import cos, pi, sin, tan
+from math import ceil, cos, floor, sin
 from typing import Tuple
 
 from numpy.typing import NDArray
@@ -16,7 +16,7 @@ class   Transform:
 
 @dataclass
 class   GameObject:
-    object3D : Object3D
+    object_3d : Object3D
     transform : Transform
 
 @dataclass
@@ -26,10 +26,48 @@ class   Camera:
     near : float
     far : float
 
-def rasterize(object3D : Object3D, screen : Surface, depth_buffer : NDArray[np.float32]):
-    print("rasterize")
+@dataclass
+class   BoundingBox:
+    left: int
+    right: int
+    top: int
+    bottom: int
 
-def get_model_view_matrix(transform : Transform):
+def rasterize(game_object : GameObject, screen : Surface, depth_buffer : NDArray[np.float32]):
+    for face in game_object.object_3d.faces:
+        rasterize_face(face, game_object, screen, depth_buffer)
+
+def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
+                   screen : Surface, depth_buffer : NDArray[np.float32]):
+    screen_size = screen.get_size()
+    projected_triangle : list[NDArray[np.float32]] = []
+    for vertex_index in face:
+        vertex = game_object.object_3d.vertices[vertex_index]
+        homogeneous_vertex = np.array([vertex[0], vertex[1], vertex[2], 1])
+        model_view_projection = get_model_view_matrix(game_object.transform)
+        world_vertex = homogeneous_vertex @ model_view_projection
+        if world_vertex[2] <= 0:
+            return
+        projected_vertex = get_projected_vertex(world_vertex, screen_size)
+        projected_triangle.append(projected_vertex)
+    bounding_box = get_bounding_box(projected_triangle, screen_size)
+    for y in range(bounding_box.bottom, bounding_box.top):
+        for x in range(bounding_box.left, bounding_box.right):
+            if is_in_triangle(projected_triangle, (x, y)):
+                screen.set_at((x, y), (255, 255, 255))
+
+def is_in_triangle(triangle : list[NDArray[np.float32]], x_y : Tuple[int, int]) -> bool:
+    return True
+
+def get_bounding_box(projected_vertices : list[NDArray[np.float32]], screen_size : Tuple[int, int]) -> BoundingBox:
+    left = max(floor(min(vertex[0] for vertex in projected_vertices)), 0)
+    right = min(ceil(max(vertex[0] for vertex in projected_vertices)), screen_size[0])
+    bottom = max(floor(min(vertex[1] for vertex in projected_vertices)), 0)
+    top = min(ceil(max(vertex[1] for vertex in projected_vertices)), screen_size[1])
+    return BoundingBox(left, right, top, bottom)
+
+
+def get_model_view_matrix(transform : Transform) -> NDArray[np.float32]:
     pos = transform.position
     position_matrix = np.array([[1, 0, 0, 0],
                                 [0, 1, 0, 0],
@@ -57,13 +95,10 @@ def get_model_view_matrix(transform : Transform):
                                   [0, 0, 0, 1]])
     return scale_matrix @ rotation_x_matrix @ rotation_y_matrix @ rotation_z_matrix @ position_matrix
 
-
-if __name__ == "__main__":
-    transform = Transform(np.array([0, 0, 0]), np.array([1, 1, 1]), np.array([0, 0, 0]))
-    model_view_projection = get_model_view_matrix(transform)
-    vertex = np.array([1, 10, 5, 1])
-    world_vertex = vertex @ model_view_projection
-    print(f"transform : {transform}")
-    print(f"vertex : {vertex}")
-    print(f"worldVertex : {world_vertex}")
-
+def get_projected_vertex(world_vertex : NDArray[np.float32], screen_size : Tuple[int, int]) -> NDArray[np.float32]:
+    projected_vertex = np.array([
+        (world_vertex[0] / world_vertex[2] + 0.5) * screen_size[0],
+        (world_vertex[1] / world_vertex[2] + 0.5) * screen_size[1],
+        world_vertex[2]
+        ])
+    return projected_vertex
