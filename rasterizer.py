@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from math import cos, sin
+from math import cos, pi, sin, tan
+from typing import Tuple
 
 from numpy.typing import NDArray
 from pygame import Surface
@@ -28,7 +29,7 @@ class   Camera:
 def rasterize(object3D : Object3D, screen : Surface, depth_buffer : NDArray[np.float32]):
     print("rasterize")
 
-def getModelViewProjectionMatrix(transform : Transform):
+def get_model_view_matrix(transform : Transform):
     pos = transform.position
     position_matrix = np.array([[1, 0, 0, 0],
                                 [0, 1, 0, 0],
@@ -59,10 +60,10 @@ def getModelViewProjectionMatrix(transform : Transform):
 
 if __name__ == "__main__":
     transform = Transform(np.array([0, 0, 0]), np.array([1, 1, 1]), np.array([0, 0, 0]))
-    model_view_projection = getModelViewProjectionMatrix(transform)
+    model_view_projection = get_model_view_matrix(transform)
     vertex = np.array([1, 10, 5, 1])
-    worldVertex = vertex @ model_view_projection
+    world_vertex = vertex @ model_view_projection
     print(f"transform : {transform}")
     print(f"vertex : {vertex}")
-    print(f"worldVertex : {worldVertex}")
+    print(f"worldVertex : {world_vertex}")
 
