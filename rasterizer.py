@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from math import ceil, cos, floor, sin
 from typing import Tuple
-from numba import njit
+from numba import njit, prange
 
 from numba import int16
 from numba.experimental import jitclass
@@ -69,9 +69,9 @@ def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
     draw_triangle(bounding_box, projected_triangle, screen)
 
 
-@njit
+@njit(parallel=True)
 def draw_triangle(bounding_box : BoundingBox, projected_triangle : NDArray[np.float32], screen : NDArray[np.uint8]):
-    for y in range(bounding_box.bottom, bounding_box.top):
+    for y in prange(bounding_box.bottom, bounding_box.top):
         for x in range(bounding_box.left, bounding_box.right):
             if is_in_triangle(projected_triangle, x, y):
                 screen[y, x] = [255, 255, 255]
