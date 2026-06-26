@@ -11,6 +11,7 @@ size = (400, 400)
 def run_rasterizer(objectFilePath : str):
     pygame.init()
     screen = pygame.display.set_mode(size)
+    clock = pygame.time.Clock()
 
     object_3d : Object3D = parse_simple_obj_file(objectFilePath)
     transform = Transform(np.array([0, 0, 1], np.float32), np.array([0.5, 0.5, 0.5], np.float32), np.array([0, 0, 0], np.float32))
@@ -18,6 +19,8 @@ def run_rasterizer(objectFilePath : str):
 
     running = True
     while running:
+        clock.tick(60)
+        print(f"fps : {int(clock.get_fps())}")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
