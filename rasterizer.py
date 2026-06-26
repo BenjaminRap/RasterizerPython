@@ -41,7 +41,7 @@ bounding_box_spec = [
     ("bottom", int16)
 ]
 
-@jitclass(bounding_box_spec)
+@jitclass(bounding_box_spec) # pyright : ignore
 class   BoundingBox:
     left: np.int16
     right: np.int16
