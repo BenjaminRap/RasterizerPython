@@ -1,11 +1,7 @@
-from dataclasses import dataclass, field
 import numpy as np
 from numpy.typing import NDArray
 
-@dataclass
-class   Object3D:
-    vertices : list[NDArray[np.float32]] = field(default_factory=list)
-    faces : list[NDArray[np.int32]] = field(default_factory=list)
+from rasterizer import Object3D
 
 def parse_vertex_line(splitted_line : list[str]) -> NDArray[np.float32]:
     if len(splitted_line) != 3:
