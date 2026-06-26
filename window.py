@@ -23,7 +23,7 @@ def run_rasterizer(objectFilePath : str):
 
     running = True
     while running:
-        clock.tick(60)
+        clock.tick()
         print(f"fps : {int(clock.get_fps())}")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
