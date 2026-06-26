@@ -74,7 +74,7 @@ def draw_triangle(bounding_box : BoundingBox, projected_triangle : NDArray[np.fl
     for y in prange(bounding_box.bottom, bounding_box.top):
         for x in range(bounding_box.left, bounding_box.right):
             if is_in_triangle(projected_triangle, x, y):
-                screen[y, x] = [255, 255, 255]
+                screen[x, -y - 1] = [255, 255, 255]
 
 
 def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], screen_size : Tuple[int, int]) -> NDArray[np.float32] | None:
