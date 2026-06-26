@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
 from math import ceil, cos, floor, sin
 from typing import Tuple
+from numba import njit
 
+from numba import int16
+from numba.experimental import jitclass
 from numpy.typing import NDArray
 import numpy as np
 
@@ -31,13 +34,24 @@ class   Camera:
     near : float
     far : float
 
+bounding_box_spec = [
+    ("left", int16),
+    ("right", int16),
+    ("top", int16),
+    ("bottom", int16)
+]
 
-@dataclass
+@jitclass(bounding_box_spec)
 class   BoundingBox:
-    left: int
-    right: int
-    top: int
-    bottom: int
+    left: np.int16
+    right: np.int16
+    top: np.int16
+    bottom: np.int16
+    def __init__(self, left : np.int16, right : np.int16, top : np.int16, bottom : np.int16):
+        self.left = left
+        self.right = right
+        self.top = top
+        self.bottom = bottom
 
 
 def rasterize(game_objects : list[GameObject], screen : NDArray[np.uint8]):
@@ -49,22 +63,23 @@ def rasterize(game_objects : list[GameObject], screen : NDArray[np.uint8]):
 def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
                    screen : NDArray[np.uint8]):
     projected_triangle = get_projected_triangle(game_object, face, screen.shape)
-    if projected_triangle == None:
+    if projected_triangle is None:
         return
     bounding_box = get_bounding_box(projected_triangle, screen.shape)
     draw_triangle(bounding_box, projected_triangle, screen)
 
 
-def draw_triangle(bounding_box : BoundingBox, projected_triangle : list[NDArray[np.float32]], screen : NDArray[np.uint8]):
+@njit
+def draw_triangle(bounding_box : BoundingBox, projected_triangle : NDArray[np.float32], screen : NDArray[np.uint8]):
     for y in range(bounding_box.bottom, bounding_box.top):
         for x in range(bounding_box.left, bounding_box.right):
             if is_in_triangle(projected_triangle, x, y):
                 screen[y, x] = [255, 255, 255]
 
 
-def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], screen_size : Tuple[int, int]) -> list[NDArray[np.float32]] | None:
-    projected_triangle : list[NDArray[np.float32]] = []
-    for vertex_index in face:
+def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], screen_size : Tuple[int, int]) -> NDArray[np.float32] | None:
+    projected_triangle = np.empty((3, 3), np.float32)
+    for triangle_index, vertex_index in enumerate(face):
         vertex = game_object.object_3d.vertices[vertex_index]
         homogeneous_vertex = np.array([vertex[0], vertex[1], vertex[2], 1])
         model_view_projection = get_model_view_matrix(game_object.transform)
@@ -72,22 +87,24 @@ def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], s
         if world_vertex[2] <= 0:
             return
         projected_vertex = get_projected_vertex(world_vertex, screen_size)
-        projected_triangle.append(projected_vertex)
+        projected_triangle[triangle_index] = projected_vertex
     return projected_triangle
 
 
-def is_in_triangle(triangle : list[NDArray[np.float32]], x : int, y : int) -> bool:
+@njit
+def is_in_triangle(triangle : NDArray[np.float32], x : int, y : int) -> bool:
     return edge(triangle[0], triangle[1], x, y) > 0 \
         and edge(triangle[1], triangle[2], x, y) > 0 \
         and edge(triangle[2], triangle[0], x, y) > 0
 
 
+@njit
 def edge(vector_a : NDArray[np.float32], vector_b : NDArray[np.float32], point_x : int, point_y : int):
     return (vector_a[0] - vector_b[0]) * (point_y - vector_a[1]) \
             - (vector_a[1] - vector_b[1]) * (point_x - vector_a[0])
 
 
-def get_bounding_box(projected_vertices : list[NDArray[np.float32]], screen_size : Tuple[int, int]) -> BoundingBox:
+def get_bounding_box(projected_vertices : NDArray[np.float32], screen_size : Tuple[int, int]) -> BoundingBox:
     left = max(floor(min(vertex[0] for vertex in projected_vertices)), 0)
     right = min(ceil(max(vertex[0] for vertex in projected_vertices)), screen_size[0])
     bottom = max(floor(min(vertex[1] for vertex in projected_vertices)), 0)
