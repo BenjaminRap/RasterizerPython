@@ -91,14 +91,14 @@ def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], s
     return projected_triangle
 
 
-@njit
+@njit(inline="always")
 def is_in_triangle(triangle : NDArray[np.float32], x : int, y : int) -> bool:
     return edge(triangle[0], triangle[1], x, y) > 0 \
         and edge(triangle[1], triangle[2], x, y) > 0 \
         and edge(triangle[2], triangle[0], x, y) > 0
 
 
-@njit
+@njit(inline="always")
 def edge(vector_a : NDArray[np.float32], vector_b : NDArray[np.float32], point_x : int, point_y : int):
     return (vector_a[0] - vector_b[0]) * (point_y - vector_a[1]) \
             - (vector_a[1] - vector_b[1]) * (point_x - vector_a[0])
