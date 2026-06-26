@@ -1,4 +1,5 @@
 from math import sin
+import sys
 
 import pygame
 import numpy as np
@@ -28,7 +29,7 @@ def run_rasterizer(objectFilePath : str):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        transform.rotation[1] = sin(pygame.time.get_ticks() / 1000)
+        transform.rotation[0] = sin(pygame.time.get_ticks() / 1000)
         transform.position[0] = sin(pygame.time.get_ticks() / 1000) / 7
         screen_buffer.fill(0)
         rasterize([game_object], screen_buffer)
@@ -37,4 +38,7 @@ def run_rasterizer(objectFilePath : str):
     pygame.quit()
 
 if __name__ == "__main__":
-    run_rasterizer("./objects/triangle.simpleObj")
+    if len(sys.argv) != 2:
+        print("Wrong number of arguments, expected one : the path to the object to render")
+    else:
+        run_rasterizer(sys.argv[1])
