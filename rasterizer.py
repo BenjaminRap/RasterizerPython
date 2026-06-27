@@ -65,12 +65,22 @@ def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
     triangle = [game_object.object_3d.vertices[vertex_index] for vertex_index in face]
     hom_triangle = [np.append(vertex, 1) for vertex in triangle]
     model_view_projection = get_model_view_matrix(game_object.transform)
-    world_triangle = [hom_vertice @ model_view_projection for hom_vertice in hom_triangle]
+    world_triangle = np.array([hom_vertice @ model_view_projection for hom_vertice in hom_triangle])
     if any(world_vertex[2] <= 0 for world_vertex in world_triangle):
         return
+    normal = get_triangle_normal(world_triangle)
+    center = np.mean(world_triangle, axis=0)
+    if np.dot(normal, center[:-1]) >= 0:
+        return 
     projected_triangle = np.array([get_projected_vertex(world_vertex, screen.shape) for world_vertex in world_triangle])
     bounding_box = get_bounding_box(projected_triangle, screen.shape)
     draw_triangle(bounding_box, projected_triangle, screen)
+
+def get_triangle_normal(triangle : NDArray[np.float32]):
+    ab = triangle[1] - triangle[0]
+    ac = triangle[2] - triangle[0]
+    normal = np.cross(ab[:-1], ac[:-1])
+    return normal
 
 
 @njit(parallel=True)
