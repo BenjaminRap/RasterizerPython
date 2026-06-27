@@ -41,7 +41,7 @@ bounding_box_spec = [
     ("bottom", int16)
 ]
 
-@jitclass(bounding_box_spec) # pyright : ignore
+@jitclass(bounding_box_spec)
 class   BoundingBox:
     left: np.int16
     right: np.int16
@@ -62,9 +62,13 @@ def rasterize(game_objects : list[GameObject], screen : NDArray[np.uint8]):
 
 def rasterize_face(face : NDArray[np.int32], game_object : GameObject,
                    screen : NDArray[np.uint8]):
-    projected_triangle = get_projected_triangle(game_object, face, screen.shape)
-    if projected_triangle is None:
+    triangle = [game_object.object_3d.vertices[vertex_index] for vertex_index in face]
+    hom_triangle = [np.append(vertex, 1) for vertex in triangle]
+    model_view_projection = get_model_view_matrix(game_object.transform)
+    world_triangle = [hom_vertice @ model_view_projection for hom_vertice in hom_triangle]
+    if any(world_vertex[2] <= 0 for world_vertex in world_triangle):
         return
+    projected_triangle = np.array([get_projected_vertex(world_vertex, screen.shape) for world_vertex in world_triangle])
     bounding_box = get_bounding_box(projected_triangle, screen.shape)
     draw_triangle(bounding_box, projected_triangle, screen)
 
@@ -75,20 +79,6 @@ def draw_triangle(bounding_box : BoundingBox, projected_triangle : NDArray[np.fl
         for x in range(bounding_box.left, bounding_box.right):
             if is_in_triangle(projected_triangle, x, y):
                 screen[x, -y - 1] = [255, 255, 255]
-
-
-def get_projected_triangle(game_object : GameObject, face : NDArray[np.int32], screen_size : Tuple[int, int]) -> NDArray[np.float32] | None:
-    projected_triangle = np.empty((3, 3), np.float32)
-    for triangle_index, vertex_index in enumerate(face):
-        vertex = game_object.object_3d.vertices[vertex_index]
-        homogeneous_vertex = np.array([vertex[0], vertex[1], vertex[2], 1])
-        model_view_projection = get_model_view_matrix(game_object.transform)
-        world_vertex = homogeneous_vertex @ model_view_projection
-        if world_vertex[2] <= 0:
-            return
-        projected_vertex = get_projected_vertex(world_vertex, screen_size)
-        projected_triangle[triangle_index] = projected_vertex
-    return projected_triangle
 
 
 @njit(inline="always")
